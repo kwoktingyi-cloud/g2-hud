@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Even G2 — J.A.R.V.I.S. HUD (Stable Always-On)</title>
+  <title>Even G2 — J.A.R.V.I.S. HUD (4-Corner Frame & Swipe Notif)</title>
   <style>
     :root {
       --g2-green: #00ff66;
@@ -67,8 +67,8 @@
       top: 50%;
       left: 50%;
       transform: translate(-50%, -50%);
-      width: 170px;
-      height: 120px;
+      width: 165px;
+      height: 110px;
       border: 1px dashed rgba(0, 255, 102, 0.1);
       border-radius: 8px;
       display: flex;
@@ -78,6 +78,8 @@
       color: rgba(0, 255, 102, 0.18);
       text-shadow: none;
       pointer-events: none;
+      text-align: center;
+      line-height: 1.4;
     }
 
     /* 四角通用 J.A.R.V.I.S. 戰術外框基礎 */
@@ -126,15 +128,15 @@
       line-height: 1.25;
     }
 
-    /* 2. 左下角：兩行通知 + 電話 Icon 電量% + G2 電量% + 戰術框 */
+    /* 2. 左下角：上下滑動切換通知 + 電話 Icon 電量% + G2 電量% + 戰術框 */
     .box-bl {
       bottom: 10px;
       left: 10px;
-      width: 244px;
-      height: 96px;
+      width: 248px;
+      height: 100px;
       border-bottom: 2.5px solid var(--g2-green);
       border-left: 2.5px solid var(--g2-green);
-      padding: 8px 12px;
+      padding: 6px 12px 8px 12px;
       display: flex;
       flex-direction: column;
       justify-content: space-between;
@@ -148,18 +150,27 @@
       height: 5px;
       background: var(--g2-green);
     }
+    .bl-notif-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 10px;
+      font-family: monospace;
+      opacity: 0.8;
+      margin-bottom: 1px;
+    }
     .bl-notif {
-      font-size: 13px;
+      font-size: 12.5px;
       font-weight: 600;
-      line-height: 1.35;
-      height: 36px;
+      line-height: 1.32;
+      height: 34px;
       display: -webkit-box;
       -webkit-line-clamp: 2;
       -webkit-box-orient: vertical;
       overflow: hidden;
       text-overflow: ellipsis;
       border-bottom: 1px solid var(--g2-dim);
-      padding-bottom: 4px;
+      padding-bottom: 3px;
     }
     .bl-power-row {
       display: flex;
@@ -219,7 +230,38 @@
       display: block;
     }
 
-    /* 隱藏嘅同步專用畫布 (專門將戰術框+靚字體轉為圖像推上 G2) */
+    /* 4. 右下角：補齊對稱 J.A.R.V.I.S. 戰術外框 (內部保持全透明留空) */
+    .box-br {
+      bottom: 10px;
+      right: 10px;
+      width: 192px;
+      height: 96px;
+      border-bottom: 2.5px solid var(--g2-green);
+      border-right: 2.5px solid var(--g2-green);
+      background: transparent;
+      pointer-events: none;
+    }
+    .box-br::after {
+      content: "";
+      position: absolute;
+      bottom: -2.5px;
+      left: 18px;
+      width: 14px;
+      height: 5px;
+      background: var(--g2-green);
+    }
+    .box-br::before {
+      content: "SYS.STANDBY";
+      position: absolute;
+      bottom: 6px;
+      right: 10px;
+      font-size: 9px;
+      font-family: monospace;
+      letter-spacing: 1px;
+      opacity: 0.38;
+    }
+
+    /* 隱藏嘅同步專用畫布 (專門將四隻角戰術框+靚字體轉為圖像推上 G2) */
     .sync-canvases {
       display: none;
     }
@@ -300,18 +342,44 @@
       color: #9cd6af;
       font-family: monospace;
     }
+    .notif-pill-list {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      background: #090d0a;
+      padding: 8px;
+      border-radius: 6px;
+      border: 1px solid #1f3024;
+      font-size: 11.5px;
+      max-height: 110px;
+      overflow-y: auto;
+    }
+    .notif-pill-item {
+      padding: 4px 8px;
+      border-radius: 4px;
+      cursor: pointer;
+      display: flex;
+      justify-content: space-between;
+      color: #9ab8a4;
+    }
+    .notif-pill-item.active {
+      background: rgba(0, 255, 102, 0.16);
+      color: var(--g2-green);
+      font-weight: bold;
+      border-left: 3px solid var(--g2-green);
+    }
   </style>
 </head>
 <body>
 
-  <div class="header-title">J.A.R.V.I.S. HUD — Even G2 穩定長亮版</div>
-  <div class="header-sub">100% 即時預覽 ︱ 保留四角戰術外框 + 靚字體 ︱ 電話 Icon 電量 ︱ 真實 GPS 地圖</div>
+  <div class="header-title">J.A.R.V.I.S. HUD — 四角戰術外框 & 鏡臂滑動通知版</div>
+  <div class="header-sub">四隻角齊晒外框 ︱ 上下拉鏡臂切換通知 ︱ 原生 + 網頁雙重真實 GPS 定位</div>
 
   <!-- 眼鏡鏡片 576x288 視覺預覽區 -->
   <div class="glasses-bezel">
     <div class="g2-hud-stage">
 
-      <div class="center-clear-hint">[ 中央及右下角全透明留空 ]</div>
+      <div class="center-clear-hint">[ 中央全透明視野保護區 ]<br>上下滑動鏡臂切換通知</div>
 
       <!-- 1. 左上角：21:12 / 6 Nov / HKG 25 -->
       <div class="hud-box box-tl">
@@ -320,12 +388,15 @@
         <div class="tl-weather" id="ui-weather">HKG 25</div>
       </div>
 
-      <!-- 2. 左下角：兩行通知 + 電話 Icon 電量% + G2 電量% -->
+      <!-- 2. 左下角：上下滑動通知 + 電話 Icon 電量% + G2 電量% -->
       <div class="hud-box box-bl">
-        <div class="bl-notif" id="ui-notif">劉老師：今日放學後訓導組會議改喺 4:15 PM 喺會議室 B 進行，請帶備名單。</div>
+        <div class="bl-notif-header">
+          <span id="ui-notif-idx">◈ NOTIF [1/4]</span>
+          <span>↕ 鏡臂滑動</span>
+        </div>
+        <div class="bl-notif" id="ui-notif">劉老師：今日放學後訓導組會議改喺 4:15 PM 喺會議室 B 進行。</div>
         <div class="bl-power-row">
           <div class="phone-item">
-            <!-- 電話 벡터 Logo -->
             <svg class="phone-svg" viewBox="0 0 14 22">
               <rect x="1" y="1" width="12" height="20" rx="2" />
               <line x1="5" y1="18" x2="9" y2="18" />
@@ -347,27 +418,49 @@
         <canvas id="realMapCanvas" width="180" height="96"></canvas>
       </div>
 
-      <!-- 4. 右下角：依要求完全唔擺嘢 (100% 留空) -->
+      <!-- 4. 右下角：補返對稱 J.A.R.V.I.S. 戰術外框 (內容留空) -->
+      <div class="hud-box box-br"></div>
 
     </div>
   </div>
 
-  <!-- 背景專用 Canvas：負責將戰術外框與靚字體畫成圖像推上 G2 眼鏡 -->
+  <!-- 背景專用 Canvas：負責將四隻角嘅戰術外框與靚字體畫成圖像推上 G2 眼鏡 -->
   <div class="sync-canvases">
     <canvas id="g2-tl-canvas" width="168" height="104"></canvas>
-    <canvas id="g2-bl-canvas" width="244" height="96"></canvas>
+    <canvas id="g2-bl-canvas" width="248" height="100"></canvas>
     <canvas id="g2-tr-canvas" width="192" height="120"></canvas>
+    <canvas id="g2-br-canvas" width="192" height="96"></canvas>
   </div>
 
   <!-- 手機端控制台 -->
   <div class="controls">
     <div class="bridge-banner" id="g2-bridge-status">
-      🔌 眼鏡連線狀態：預覽已就緒！（喺 Even App 內掃碼打開，就會自動將上面嘅外框、靚字體同真實地圖同步上 G2 眼鏡）
+      🔌 眼鏡狀態：預覽已就緒！（喺 Even App 內掃碼打開，即可用「鏡臂上下滑動」切換左下角通知，並顯示四隻角完整戰術外框）
     </div>
 
+    <!-- 通知佇列與鏡臂滑動控制 -->
     <div class="ctrl-title">
-      <span>🛰️ 右上角真實位置地圖 (每 2 秒自動刷新)</span>
-      <span class="gps-coords" id="gps-status-txt">📍 目前顯示：沙田 (撳下面綠色掣授權電話真實 GPS)</span>
+      <span>💬 左下角通知佇列（上下拉鏡臂 / R1 戒指即可切換）</span>
+      <span class="gps-coords" id="gesture-log">最近手勢：等待鏡臂上下滑動...</span>
+    </div>
+
+    <div class="ctrl-row">
+      <button onclick="cycleNotification(-1)">⬆️ 上一條通知 (模擬鏡臂上拉)</button>
+      <button onclick="cycleNotification(1)">⬇️ 下一條通知 (模擬鏡臂下拉)</button>
+      <button onclick="pasteClipboardNotif()">📋 讀取電話剪貼簿作為新通知</button>
+    </div>
+
+    <div class="notif-pill-list" id="notif-list-box"></div>
+
+    <div class="ctrl-row">
+      <input type="text" id="notif-input" placeholder="輸入或由 iOS 捷徑傳入新通知..." value="梁老師：Open Day 學生義工名單已經放咗上 Google Drive。" />
+      <button class="primary-btn" onclick="addNewNotif()">➕ 加入通知佇列</button>
+    </div>
+
+    <!-- GPS 控制 -->
+    <div class="ctrl-title">
+      <span>🛰️ 右上角真實位置地圖 (支援 Even SDK 原生定位 + 網頁 GPS)</span>
+      <span class="gps-coords" id="gps-status-txt">📍 目前顯示：沙田 (撳下面綠色掣鎖定電話真實 GPS)</span>
     </div>
 
     <div class="ctrl-row">
@@ -375,11 +468,6 @@
       <button onclick="setManualLocation(22.3771, 114.1974, '沙田')">測試：沙田</button>
       <button onclick="setManualLocation(22.3193, 114.1694, '旺角')">測試：旺角</button>
       <button onclick="setManualLocation(22.2819, 114.1581, '中環')">測試：中環</button>
-    </div>
-
-    <div class="ctrl-row">
-      <input type="text" id="notif-input" value="劉老師：今日放學後訓導組會議改喺 4:15 PM 喺會議室 B 進行，請帶備名單。" />
-      <button onclick="updateNotif()">更新左下角兩行通知</button>
     </div>
 
     <div class="ctrl-row">
@@ -396,19 +484,95 @@
 
   <script>
     // ============================================================================
-    // 1. 基本資料狀態 (時間、日期、天氣、電量、通知)
+    // 1. 基本資料狀態 & 通知佇列 (支援上下拉鏡臂 Swap 通知)
     // ============================================================================
     const monthNames = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
     let hkTemp = 25;
     let phonePct = 91;
     let g2Pct = 80;
-    let notifText = '劉老師：今日放學後訓導組會議改喺 4:15 PM 喺會議室 B 進行，請帶備名單。';
+
+    // 預設通知佇列 (支援透過 URL ?notif=xxx 自動注入真實電話通知)
+    let notifQueue = [
+      '劉老師：今日放學後訓導組會議改喺 4:15 PM 喺會議室 B 進行。',
+      '梁老師：2026 Open Day 學生義工招募名單已經更新，請確認。',
+      '校務處：S5 經濟科及 S3 數學科 UT1 試卷分數統計表已收齊。',
+      '系統提示：上下滑動 G2 鏡臂或 R1 戒指，即可隨時切換唔同通知！'
+    ];
+    let currentNotifIdx = 0;
+
+    // 檢查網址有無透過 iOS 捷徑 / Android Webhook 傳入真實通知 (?notif=xxx)
+    try {
+      const params = new URLSearchParams(window.location.search);
+      const incomingNotif = params.get('notif');
+      if (incomingNotif && incomingNotif.trim()) {
+        notifQueue.unshift(incomingNotif.trim());
+        currentNotifIdx = 0;
+      }
+    } catch (e) {}
 
     // 地圖座標狀態
     let currentLat = 22.3771;
     let currentLon = 114.1974;
     let osmWays = [];
     let gpsWatchId = null;
+
+    function renderNotifListUI() {
+      const box = document.getElementById('notif-list-box');
+      if (!box) return;
+      box.innerHTML = '';
+      notifQueue.forEach(function(item, idx) {
+        const div = document.createElement('div');
+        div.className = 'notif-pill-item' + (idx === currentNotifIdx ? ' active' : '');
+        div.innerHTML = `<span>[${idx + 1}/${notifQueue.length}] ${item}</span>`;
+        div.onclick = function() {
+          currentNotifIdx = idx;
+          updateClockAndUI();
+          if (window.pushLeftBottomOnly) window.pushLeftBottomOnly();
+        };
+        box.appendChild(div);
+      });
+    }
+
+    // 上下滑動鏡臂切換通知函數 (dir: -1 = 上一條, +1 = 下一條)
+    window.cycleNotification = function(dir, sourceLabel) {
+      if (notifQueue.length === 0) return;
+      currentNotifIdx = (currentNotifIdx + dir + notifQueue.length) % notifQueue.length;
+      const logEl = document.getElementById('gesture-log');
+      if (logEl) {
+        const actionName = dir < 0 ? '⬆️ 向上滑動 (上一條)' : '⬇️ 向下滑動 (下一條)';
+        logEl.textContent = `最近手勢：${sourceLabel || '手動'} -> ${actionName} [${currentNotifIdx + 1}/${notifQueue.length}]`;
+      }
+      updateClockAndUI();
+      // 即時單獨刷新眼鏡左下角，反應最快
+      if (window.pushLeftBottomOnly) window.pushLeftBottomOnly();
+    };
+
+    window.addNewNotif = function() {
+      const input = document.getElementById('notif-input');
+      const val = input.value.trim();
+      if (!val) return;
+      notifQueue.unshift(val);
+      currentNotifIdx = 0;
+      input.value = '';
+      updateClockAndUI();
+      if (window.pushLeftBottomOnly) window.pushLeftBottomOnly();
+    };
+
+    window.pasteClipboardNotif = async function() {
+      try {
+        const text = await navigator.clipboard.readText();
+        if (text && text.trim()) {
+          notifQueue.unshift(text.trim());
+          currentNotifIdx = 0;
+          updateClockAndUI();
+          if (window.pushLeftBottomOnly) window.pushLeftBottomOnly();
+        } else {
+          alert('剪貼簿入面無文字內容');
+        }
+      } catch (e) {
+        alert('請允許讀取剪貼簿，或者直接貼上落輸入框');
+      }
+    };
 
     function updateClockAndUI() {
       const now = new Date();
@@ -417,34 +581,33 @@
       const day = now.getDate();
       const mon = monthNames[now.getMonth()];
 
+      const activeNotif = notifQueue[currentNotifIdx] || '';
+      const idxLabel = `◈ NOTIF [${currentNotifIdx + 1}/${notifQueue.length}]`;
+
       document.getElementById('ui-time').textContent = `${hh}:${mm}`;
       document.getElementById('ui-date').textContent = `${day} ${mon}`;
       document.getElementById('ui-weather').textContent = `HKG ${hkTemp}`;
       document.getElementById('ui-phone-bat').textContent = `${phonePct}%`;
       document.getElementById('ui-g2-bat').textContent = `G2 ${g2Pct}%`;
-      document.getElementById('ui-notif').textContent = notifText;
+      document.getElementById('ui-notif-idx').textContent = idxLabel;
+      document.getElementById('ui-notif').textContent = activeNotif;
       document.getElementById('ui-map-coord').textContent = `${currentLat.toFixed(4)}N ${currentLon.toFixed(4)}E`;
 
-      // 同步繪製供眼鏡使用嘅隱藏 Canvas
-      drawG2OffscreenCanvases(`${hh}:${mm}`, `${day} ${mon}`, `HKG ${hkTemp}`);
+      renderNotifListUI();
+
+      // 同步繪製供眼鏡使用嘅 4 個隱藏 Canvas (包含右下角外框)
+      drawG2OffscreenCanvases(`${hh}:${mm}`, `${day} ${mon}`, `HKG ${hkTemp}`, idxLabel, activeNotif);
     }
 
     window.updateBat = function(p, g) {
       if (p !== null) phonePct = Number(p);
       if (g !== null) g2Pct = Number(g);
       updateClockAndUI();
-      if (window.pushToGlassesNow) window.pushToGlassesNow();
-    };
-
-    window.updateNotif = function() {
-      const val = document.getElementById('notif-input').value.trim();
-      if (val) notifText = val;
-      updateClockAndUI();
-      if (window.pushToGlassesNow) window.pushToGlassesNow();
+      if (window.pushLeftBottomOnly) window.pushLeftBottomOnly();
     };
 
     // ============================================================================
-    // 2. 右上角真實 GPS 地圖繪製 (純街道，無導航線)
+    // 2. 右上角真實 GPS 地圖繪製 (支援 Even SDK getAppLocation + 網頁 Geolocation)
     // ============================================================================
     const mapCanvas = document.getElementById('realMapCanvas');
     const mapCtx = mapCanvas.getContext('2d');
@@ -462,7 +625,6 @@
       mapCtx.fillStyle = '#000000';
       mapCtx.fillRect(0, 0, W, H);
 
-      // 畫周邊真實街道
       for (let i = 0; i < osmWays.length; i++) {
         const way = osmWays[i];
         mapCtx.beginPath();
@@ -478,7 +640,6 @@
         mapCtx.stroke();
       }
 
-      // 畫正中央定位點 (代表你目前企緊嘅位置)
       const cx = W / 2;
       const cy = H / 2;
       mapCtx.strokeStyle = 'rgba(0, 255, 102, 0.7)';
@@ -493,7 +654,6 @@
       mapCtx.fill();
     }
 
-    // 預設街道網格 (保證無網或載入中都有清晰地圖睇)
     function loadFallbackStreets(lat, lon) {
       osmWays = [
         { isMajor: true, pts: [{lat: lat-0.0018, lon: lon-0.0015}, {lat: lat+0.0018, lon: lon+0.0015}] },
@@ -536,13 +696,20 @@
       fetchRealOSMRoads(lat, lon);
     };
 
-    window.startLivePhoneGPS = function() {
+    window.startLivePhoneGPS = async function() {
+      document.getElementById('gps-status-txt').textContent = '🛰️ 正在請求電話 GPS 定位權限...';
+
+      // 優先嘗試使用 Even Hub SDK 原生橋接定位 (getAppLocation)
+      if (window.requestEvenNativeLocation) {
+        const gotNative = await window.requestEvenNativeLocation();
+        if (gotNative) return;
+      }
+
+      // 後備方案：標準 HTML5 Geolocation API
       if (!navigator.geolocation) {
-        alert('你嘅瀏覽器唔支援 GPS 定位');
+        document.getElementById('gps-status-txt').textContent = '⚠️ 此環境唔支援 Geolocation';
         return;
       }
-      document.getElementById('gps-status-txt').textContent = '🛰️ 正在請求電話 GPS 權限...（請喺彈出視窗撳「允許」）';
-
       if (gpsWatchId !== null) navigator.geolocation.clearWatch(gpsWatchId);
 
       gpsWatchId = navigator.geolocation.watchPosition(
@@ -555,14 +722,14 @@
         },
         function(err) {
           document.getElementById('gps-status-txt').textContent =
-            `⚠️ 無法取得 GPS (${err.message}) — 請確保使用 GitHub Pages (HTTPS) 並喺手機設定開啟 Even App 定位權限`;
+            `⚠️ 無法取得 GPS (${err.message}) — 請確保使用 HTTPS 網址並開啟 Even App 定位權限`;
         },
         { enableHighAccuracy: true, maximumAge: 2000, timeout: 10000 }
       );
     };
 
     // ============================================================================
-    // 3. 背景繪製 G2 眼鏡專用 Bitmap 畫布 (連四隻角外框 + 靚字體 + 電話 Icon)
+    // 3. 背景繪製 G2 眼鏡專用 Bitmap 畫布 (四隻角全部有齊 J.A.R.V.I.S. 戰術外框)
     // ============================================================================
     function wrapTwoLines(ctx, text, maxW) {
       const chars = Array.from(text);
@@ -580,7 +747,7 @@
       return [l1, l2];
     }
 
-    function drawG2OffscreenCanvases(timeStr, dateStr, weatherStr) {
+    function drawG2OffscreenCanvases(timeStr, dateStr, weatherStr, idxLabel, activeNotif) {
       // (A) 左上角畫布 (168 x 104)
       const cTL = document.getElementById('g2-tl-canvas');
       const ctxTL = cTL.getContext('2d');
@@ -592,6 +759,7 @@
       ctxTL.moveTo(2, 96); ctxTL.lineTo(2, 2); ctxTL.lineTo(156, 2);
       ctxTL.stroke();
       ctxTL.fillStyle = '#00ff66';
+      ctxTL.fillRect(136, 0, 14, 5); // 戰術裝飾塊
       ctxTL.font = '800 34px -apple-system, BlinkMacSystemFont, "SF Pro Display", sans-serif';
       ctxTL.fillText(timeStr, 12, 38);
       ctxTL.strokeStyle = 'rgba(0,255,102,0.4)';
@@ -602,32 +770,42 @@
       ctxTL.font = '700 16px -apple-system, BlinkMacSystemFont, sans-serif';
       ctxTL.fillText(weatherStr, 12, 90);
 
-      // (B) 左下角畫布 (244 x 96)
+      // (B) 左下角畫布 (248 x 100) — 顯示通知頁碼 + 兩行通知 + 電話 Icon 電量
       const cBL = document.getElementById('g2-bl-canvas');
       const ctxBL = cBL.getContext('2d');
       ctxBL.fillStyle = '#000';
-      ctxBL.fillRect(0, 0, 244, 96);
+      ctxBL.fillRect(0, 0, 248, 100);
       ctxBL.strokeStyle = '#00ff66';
       ctxBL.lineWidth = 2.5;
       ctxBL.beginPath();
-      ctxBL.moveTo(2, 10); ctxBL.lineTo(2, 94); ctxBL.lineTo(234, 94);
+      ctxBL.moveTo(2, 8); ctxBL.lineTo(2, 98); ctxBL.lineTo(238, 98);
       ctxBL.stroke();
       ctxBL.fillStyle = '#00ff66';
-      ctxBL.font = '600 13px -apple-system, BlinkMacSystemFont, "PingFang HK", sans-serif';
-      const lines = wrapTwoLines(ctxBL, notifText, 218);
-      ctxBL.fillText(lines[0], 12, 22);
-      if (lines[1]) ctxBL.fillText(lines[1], 12, 40);
+      ctxBL.fillRect(216, 95, 14, 5); // 戰術裝飾塊
+
+      // 頂部通知索引列
+      ctxBL.font = 'bold 10px monospace';
+      ctxBL.fillText(idxLabel, 12, 13);
+      ctxBL.fillText('↕SWIPE', 198, 13);
+
+      // 兩行通知內容
+      ctxBL.font = '600 12.5px -apple-system, BlinkMacSystemFont, "PingFang HK", sans-serif';
+      const lines = wrapTwoLines(ctxBL, activeNotif, 222);
+      ctxBL.fillText(lines[0], 12, 30);
+      if (lines) ctxBL.fillText(lines, 12, 46);
+
       ctxBL.strokeStyle = 'rgba(0,255,102,0.4)';
       ctxBL.lineWidth = 1;
-      ctxBL.beginPath(); ctxBL.moveTo(12, 50); ctxBL.lineTo(228, 50); ctxBL.stroke();
-      // 電話 Icon
+      ctxBL.beginPath(); ctxBL.moveTo(12, 54); ctxBL.lineTo(232, 54); ctxBL.stroke();
+
+      // 電話 Icon + 電量%
       ctxBL.strokeStyle = '#00ff66';
       ctxBL.lineWidth = 2;
-      ctxBL.strokeRect(13, 60, 12, 20);
-      ctxBL.fillRect(17, 76, 4, 2);
+      ctxBL.strokeRect(13, 63, 12, 20);
+      ctxBL.fillRect(17, 79, 4, 2);
       ctxBL.font = '800 16px -apple-system, BlinkMacSystemFont, sans-serif';
-      ctxBL.fillText(phonePct + '%', 31, 76);
-      ctxBL.fillText('G2 ' + g2Pct + '%', 102, 76);
+      ctxBL.fillText(phonePct + '%', 31, 79);
+      ctxBL.fillText('G2 ' + g2Pct + '%', 104, 79);
 
       // (C) 右上角地圖畫布 (192 x 120)
       const cTR = document.getElementById('g2-tr-canvas');
@@ -640,10 +818,27 @@
       ctxTR.moveTo(10, 2); ctxTR.lineTo(190, 2); ctxTR.lineTo(190, 110);
       ctxTR.stroke();
       ctxTR.fillStyle = '#00ff66';
+      ctxTR.fillRect(18, 0, 14, 5);
       ctxTR.font = 'bold 10px monospace';
-      ctxTR.fillText(currentLat.toFixed(4) + 'N ' + currentLon.toFixed(4) + 'E', 6, 14);
-      ctxTR.fillText('N▲', 166, 14);
+      ctxTR.fillText(currentLat.toFixed(4) + 'N ' + currentLon.toFixed(4) + 'E', 6, 15);
+      ctxTR.fillText('N▲', 166, 15);
       ctxTR.drawImage(mapCanvas, 6, 20);
+
+      // (D) 右下角戰術外框畫布 (192 x 96) — 補齊右下角外框，內部全黑透明
+      const cBR = document.getElementById('g2-br-canvas');
+      const ctxBR = cBR.getContext('2d');
+      ctxBR.fillStyle = '#000';
+      ctxBR.fillRect(0, 0, 192, 96);
+      ctxBR.strokeStyle = '#00ff66';
+      ctxBR.lineWidth = 2.5;
+      ctxBR.beginPath();
+      ctxBR.moveTo(190, 10); ctxBR.lineTo(190, 94); ctxBR.lineTo(10, 94);
+      ctxBR.stroke();
+      ctxBR.fillStyle = '#00ff66';
+      ctxBR.fillRect(18, 91, 14, 5); // 左下戰術裝飾塊
+      ctxBR.font = 'bold 9px monospace';
+      ctxBR.fillStyle = 'rgba(0, 255, 102, 0.45)';
+      ctxBR.fillText('SYS.STANDBY', 112, 84);
     }
 
     window.extractG2Bytes = function(canvasId) {
@@ -688,10 +883,14 @@
   </script>
 
   <!-- ============================================================================
-       Even Hub SDK 真機同步模組 (保留戰術外框 + 靚字體 + 穩定長亮)
+       Even Hub SDK 真機同步模組 (4 個 Image 容器 + 鏡臂上下滑動事件 + 原生 GPS)
        ============================================================================ -->
   <script type="module">
-    import { waitForEvenAppBridge } from 'https://esm.sh/@evenrealities/even_hub_sdk';
+    import {
+      waitForEvenAppBridge,
+      OsEventTypeList,
+      AppLocationAccuracy
+    } from 'https://esm.sh/@evenrealities/even_hub_sdk';
 
     async function connectG2() {
       try {
@@ -699,27 +898,58 @@
         if (!bridge) return;
 
         document.getElementById('g2-bridge-status').textContent =
-          '✅ 已成功連接 Even G2 眼鏡！四角戰術外框、靚字體及真實地圖已同步上鏡片（穩定長亮模式）';
+          '✅ 已連接 Even G2！四隻角戰術外框已點亮，上下滑動鏡臂即可切換左下角通知！';
 
+        // 1. 讀取眼鏡真實電量及監聽狀態變化
         try {
           const info = await bridge.getDeviceInfo();
           if (info && info.batteryLevel) {
             window.updateBat(null, info.batteryLevel);
           }
+          if (bridge.onDeviceStatusChanged) {
+            bridge.onDeviceStatusChanged(function(status) {
+              if (status && status.batteryLevel) {
+                window.updateBat(null, status.batteryLevel);
+              }
+            });
+          }
         } catch (e) {}
 
-        // 建立 3 個圖像容器 (左上、左下、右上) + 1 個隱藏觸控接收器
+        // 2. 提供 Even App 原生高精度 GPS 定位函數 (bridge.getAppLocation)
+        window.requestEvenNativeLocation = async function() {
+          try {
+            if (!bridge.getAppLocation) return false;
+            const loc = await bridge.getAppLocation({
+              accuracy: AppLocationAccuracy ? AppLocationAccuracy.High : 'high',
+              timeoutMs: 6000
+            });
+            if (loc && typeof loc.latitude === 'number') {
+              window.setManualLocation(loc.latitude, loc.longitude, 'Even App 原生 GPS');
+              document.getElementById('gps-status-txt').textContent =
+                `✅ 已透過 Even SDK 鎖定真實 GPS：${loc.latitude.toFixed(5)}N, ${loc.longitude.toFixed(5)}E`;
+              return true;
+            }
+          } catch (e) {}
+          return false;
+        };
+
+        // 自動嘗試抓取一次原生 GPS
+        window.requestEvenNativeLocation();
+
+        // 3. 建立 4 個角落嘅 ImageContainer + 1 個帶 borderWidth:2 嘅觸控捕捉容器
+        // (注意：G2 真機要求 isEventCapture:1 嘅容器必須有 borderWidth >= 2 先可以拎到鏡臂滑動焦點)
         await bridge.createStartUpPageContainer({
-          containerTotalNum: 4,
+          containerTotalNum: 5,
           textObject: [
             {
-              containerID: 4,
-              containerName: 'event-holder',
-              xPosition: 280,
-              yPosition: 276,
-              width: 16,
-              height: 8,
-              content: '',
+              containerID: 5,
+              containerName: 'touch-capture',
+              xPosition: 272,
+              yPosition: 274,
+              width: 32,
+              height: 12,
+              borderWidth: 2,
+              content: ' ',
               isEventCapture: 1
             }
           ],
@@ -736,9 +966,9 @@
               containerID: 2,
               containerName: 'bl-box',
               xPosition: 8,
-              yPosition: 184,
-              width: 244,
-              height: 96
+              yPosition: 180,
+              width: 248,
+              height: 100
             },
             {
               containerID: 3,
@@ -747,14 +977,70 @@
               yPosition: 8,
               width: 192,
               height: 120
+            },
+            {
+              containerID: 4,
+              containerName: 'br-frame',
+              xPosition: 376,
+              yPosition: 184,
+              width: 192,
+              height: 96
             }
           ]
         });
 
-        let isPushing = false;
+        // 4. 監聽鏡臂上下滑動 (SCROLL_TOP = 1, SCROLL_BOTTOM = 2) 切換左下角通知
+        let lastSwipeTime = 0;
+        if (bridge.onEvenHubEvent) {
+          bridge.onEvenHubEvent(function(event) {
+            const now = Date.now();
+            // 600ms 防連跳閘門 (因為一次長滑可能會觸發多個 scroll event)
+            if (now - lastSwipeTime < 600) return;
+
+            const ev = event.textEvent || event.listEvent || event.sysEvent;
+            const evType = ev ? ev.eventType : undefined;
+
+            const TOP_CODE = (OsEventTypeList && OsEventTypeList.SCROLL_TOP_EVENT) || 1;
+            const BOT_CODE = (OsEventTypeList && OsEventTypeList.SCROLL_BOTTOM_EVENT) || 2;
+            const DBL_CODE = (OsEventTypeList && OsEventTypeList.DOUBLE_CLICK_EVENT) || 3;
+
+            if (evType === TOP_CODE) {
+              lastSwipeTime = now;
+              window.cycleNotification(-1, 'G2 鏡臂上拉');
+            } else if (evType === BOT_CODE) {
+              lastSwipeTime = now;
+              window.cycleNotification(1, 'G2 鏡臂下拉');
+            } else if (evType === DBL_CODE) {
+              // 雙擊鏡臂安全退出
+              if (bridge.shutDownPageContainer) bridge.shutDownPageContainer(1);
+            } else if (evType === 0 || (event.sysEvent && evType === undefined)) {
+              // 單擊鏡臂亦可以切換去下一條通知
+              lastSwipeTime = now;
+              window.cycleNotification(1, 'G2 鏡臂輕觸');
+            }
+          });
+        }
+
+        // 單獨快速刷新左下角通知框
+        let isPushingBL = false;
+        window.pushLeftBottomOnly = async function() {
+          if (isPushingBL) return;
+          isPushingBL = true;
+          try {
+            await bridge.updateImageRawData({
+              containerID: 2,
+              containerName: 'bl-box',
+              imageData: window.extractG2Bytes('g2-bl-canvas')
+            });
+          } catch (e) {}
+          isPushingBL = false;
+        };
+
+        // 完整刷新四隻角
+        let isPushingAll = false;
         window.pushToGlassesNow = async function() {
-          if (isPushing) return;
-          isPushing = true;
+          if (isPushingAll) return;
+          isPushingAll = true;
           try {
             await bridge.updateImageRawData({
               containerID: 1,
@@ -771,8 +1057,13 @@
               containerName: 'tr-map',
               imageData: window.extractG2Bytes('g2-tr-canvas')
             });
+            await bridge.updateImageRawData({
+              containerID: 4,
+              containerName: 'br-frame',
+              imageData: window.extractG2Bytes('g2-br-canvas')
+            });
           } catch (err) {}
-          isPushing = false;
+          isPushingAll = false;
         };
 
         window.pushToGlassesNow();
