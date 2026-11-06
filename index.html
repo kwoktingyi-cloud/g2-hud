@@ -3,263 +3,102 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Even G2 — J.A.R.V.I.S. HUD (Real OSM Map Edition)</title>
+  <title>Even G2 — J.A.R.V.I.S. Bitmap HUD (5s Auto-Off & Real GPS)</title>
   <style>
     :root {
       --g2-green: #00ff66;
       --g2-bright: #80ffb3;
-      --g2-mid: rgba(0, 255, 102, 0.55);
-      --g2-dim: rgba(0, 255, 102, 0.22);
+      --g2-dim: rgba(0, 255, 102, 0.25);
       --g2-bg: #000000;
     }
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body {
       background: #0a0e0b;
       color: #d8f5e0;
-      font-family: 'JetBrains Mono', 'SF Mono', 'Courier New', monospace;
+      font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'JetBrains Mono', sans-serif;
       display: flex;
       flex-direction: column;
       align-items: center;
-      padding: 20px 12px;
+      padding: 18px 12px;
       min-height: 100vh;
     }
     .header-title {
       font-size: 16px;
       color: var(--g2-green);
-      letter-spacing: 2px;
+      letter-spacing: 1.5px;
       margin-bottom: 4px;
-      font-weight: bold;
+      font-weight: 800;
       text-transform: uppercase;
       text-align: center;
     }
     .header-sub {
       font-size: 12px;
-      color: #7a9984;
-      margin-bottom: 16px;
+      color: #82a38c;
+      margin-bottom: 14px;
       text-align: center;
     }
 
     /* ====================================================
-       Even G2 576 x 288 原生光學畫布 (純黑 #000 = 鏡片完全透明)
+       Even G2 576 x 288 原生光學畫布預覽
+       (今次全部用 Canvas 畫好再射上眼鏡，保證真機字體同外框 100% 一樣！)
        ==================================================== */
     .glasses-bezel {
       background: #040705;
       border: 2px solid #233829;
       border-radius: 18px;
-      padding: 14px;
-      box-shadow: 0 0 45px rgba(0, 255, 102, 0.14);
+      padding: 12px;
+      box-shadow: 0 0 45px rgba(0, 255, 102, 0.15);
       max-width: 100%;
       overflow-x: auto;
+      position: relative;
     }
-    .g2-hud-canvas {
+    .g2-screen-wrapper {
       width: 576px;
       height: 288px;
-      background: var(--g2-bg);
-      position: relative;
-      overflow: hidden;
-      color: var(--g2-green);
-      text-shadow: 0 0 5px rgba(0, 255, 102, 0.55);
-      border: 1px solid rgba(0, 255, 102, 0.18);
-    }
-
-    /* 正中央全透明視野保護區 (僅喺模擬器極淡標示，真機 100% 透明唔發光) */
-    .center-fov-zone {
-      position: absolute;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      width: 196px;
-      height: 140px;
-      border: 1px dashed rgba(0, 255, 102, 0.08);
-      border-radius: 50%;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      pointer-events: none;
-    }
-    .center-fov-zone span {
-      font-size: 9px;
-      color: rgba(0, 255, 102, 0.15);
-      letter-spacing: 1px;
-      text-shadow: none;
-    }
-
-    /* ====================================================
-       統一四角 J.A.R.V.I.S. 戰術模組樣式 (4 Corners Unified)
-       ==================================================== */
-    .hud-module {
-      position: absolute;
-      padding: 7px 10px;
-      display: flex;
-      flex-direction: column;
-    }
-    .mod-header {
-      font-size: 9px;
-      letter-spacing: 1.5px;
-      opacity: 0.65;
-      margin-bottom: 3px;
-      display: flex;
-      align-items: center;
-      gap: 4px;
-    }
-
-    /* 1. 左上角：放大時間 (21:12) + 日期 (6 Nov) + 天氣 (HKG 25) */
-    .corner-tl {
-      top: 8px;
-      left: 8px;
-      width: 165px;
-      height: 106px;
-      border-top: 2px solid var(--g2-green);
-      border-left: 2px solid var(--g2-green);
-      background: linear-gradient(135deg, rgba(0, 255, 102, 0.07) 0%, transparent 70%);
-    }
-    .corner-tl::after {
-      content: "";
-      position: absolute;
-      top: -2px; right: 0;
-      width: 10px; height: 2px;
-      background: var(--g2-bright);
-    }
-    .tl-time {
-      font-size: 28px;
-      font-weight: bold;
-      line-height: 1.05;
-      letter-spacing: 1.5px;
-      color: var(--g2-bright);
-      margin: 2px 0 4px 0;
-    }
-    .tl-meta-row {
-      display: flex;
-      align-items: baseline;
-      justify-content: space-between;
-      font-size: 13px;
-      font-weight: bold;
-      line-height: 1.3;
-      border-top: 1px solid var(--g2-dim);
-      padding-top: 4px;
-    }
-
-    /* 2. 左下角：兩行通知 + 電話 91% Bar + G2 80% Bar */
-    .corner-bl {
-      bottom: 8px;
-      left: 8px;
-      width: 228px;
-      height: 112px;
-      border-bottom: 2px solid var(--g2-green);
-      border-left: 2px solid var(--g2-green);
-      background: linear-gradient(45deg, rgba(0, 255, 102, 0.07) 0%, transparent 75%);
-      justify-content: flex-end;
-    }
-    /* 支援最多 2 行通知顯示 */
-    .bl-notif-two-lines {
-      font-size: 11.5px;
-      line-height: 1.32;
-      height: 31px;
-      color: var(--g2-bright);
-      display: -webkit-box;
-      -webkit-line-clamp: 2;
-      -webkit-box-orient: vertical;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      margin-bottom: 5px;
-      padding-bottom: 4px;
-      border-bottom: 1px solid var(--g2-dim);
-    }
-    .bat-row {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      font-size: 11.5px;
-      margin-top: 3px;
-      font-weight: bold;
-    }
-    .bat-label {
-      width: 74px;
-      flex-shrink: 0;
-    }
-    .energy-bar-track {
-      flex: 1;
-      height: 9px;
-      border: 1px solid var(--g2-green);
-      padding: 1px;
-      background: rgba(0, 255, 102, 0.06);
-      clip-path: polygon(0 0, 100% 0, 96% 100%, 0 100%);
-    }
-    .energy-bar-fill {
-      height: 100%;
-      background: repeating-linear-gradient(
-        90deg,
-        var(--g2-green),
-        var(--g2-green) 6px,
-        #000 6px,
-        #000 8px
-      );
-      box-shadow: 0 0 6px var(--g2-green);
-      transition: width 0.25s ease;
-    }
-
-    /* 3. 右上角：真實 OpenStreetMap + OSRM 導航向量地圖 (每 2 秒刷新) */
-    .corner-tr {
-      top: 8px;
-      right: 8px;
-      width: 192px;
-      height: 124px;
-      border-top: 2px solid var(--g2-green);
-      border-right: 2px solid var(--g2-green);
-      background: linear-gradient(225deg, rgba(0, 255, 102, 0.07) 0%, transparent 70%);
-      align-items: flex-end;
-      padding: 6px 8px;
-    }
-    .corner-tr .mod-header {
-      width: 100%;
-      justify-content: space-between;
-    }
-    #realMapCanvas {
-      width: 174px;
-      height: 94px;
-      border: 1px solid rgba(0, 255, 102, 0.3);
       background: #000;
+      position: relative;
+      border: 1px solid rgba(0, 255, 102, 0.2);
+      overflow: hidden;
+    }
+    /* 預覽合成畫布 */
+    #masterPreviewCanvas {
+      width: 576px;
+      height: 288px;
       display: block;
     }
 
-    /* 4. 右下角：運動資訊 / 導航聯動資訊 / 留空 */
-    .corner-br {
-      bottom: 8px;
-      right: 8px;
-      width: 192px;
-      height: 100px;
-      border-bottom: 2px solid var(--g2-green);
-      border-right: 2px solid var(--g2-green);
-      background: linear-gradient(315deg, rgba(0, 255, 102, 0.07) 0%, transparent 75%);
-      text-align: right;
-      justify-content: flex-end;
-    }
-    .corner-br .mod-header {
-      justify-content: flex-end;
-    }
-    .corner-br.is-empty {
-      border-color: rgba(0, 255, 102, 0.14);
-      background: none;
-    }
-    .br-main {
-      font-size: 16px;
-      font-weight: bold;
-      color: var(--g2-bright);
-      line-height: 1.25;
-    }
-    .br-sub {
-      font-size: 11.5px;
-      opacity: 0.9;
-      margin-top: 3px;
-      line-height: 1.3;
+    /* 隱藏嘅獨立區塊畫布 (專門用嚟切出高解像度 Bitmap 傳送去 G2 眼鏡) */
+    .offscreen-canvases {
+      display: none;
     }
 
-    /* ====================================================
-       下方真實地圖與數據控制台
-       ==================================================== */
+    /* 5 秒休眠倒數狀態條 */
+    .timeout-bar-wrap {
+      width: 100%;
+      max-width: 576px;
+      margin-top: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      background: #101712;
+      padding: 8px 12px;
+      border-radius: 8px;
+      border: 1px solid #233829;
+      font-size: 12px;
+    }
+    .wake-pill {
+      padding: 3px 8px;
+      border-radius: 4px;
+      font-weight: bold;
+      font-size: 11px;
+    }
+    .wake-on { background: rgba(0, 255, 102, 0.2); color: #00ff66; border: 1px solid #00ff66; }
+    .wake-off { background: rgba(255, 80, 80, 0.15); color: #ff6b6b; border: 1px solid #ff6b6b; }
+
+    /* 控制面板 */
     .controls {
-      margin-top: 18px;
+      margin-top: 14px;
       width: 100%;
       max-width: 576px;
       background: #121914;
@@ -268,13 +107,21 @@
       padding: 14px 16px;
       display: flex;
       flex-direction: column;
-      gap: 10px;
+      gap: 11px;
+    }
+    .bridge-banner {
+      font-size: 11.5px;
+      padding: 7px 10px;
+      border-radius: 6px;
+      background: #0c1f13;
+      border: 1px solid #245235;
+      color: #80ffb3;
+      line-height: 1.4;
     }
     .ctrl-title {
       font-size: 12px;
       color: var(--g2-green);
       font-weight: bold;
-      letter-spacing: 1px;
       display: flex;
       justify-content: space-between;
       align-items: center;
@@ -293,7 +140,7 @@
       background: #080c09;
       border: 1px solid #344f3c;
       color: #e0f5e6;
-      padding: 7px 10px;
+      padding: 8px 10px;
       border-radius: 6px;
       font-family: inherit;
       font-size: 12px;
@@ -302,15 +149,15 @@
       background: #12301d;
       border: 1px solid var(--g2-green);
       color: var(--g2-green);
-      padding: 7px 11px;
+      padding: 8px 12px;
       border-radius: 6px;
       font-family: inherit;
-      font-size: 11.5px;
+      font-size: 12px;
       font-weight: bold;
       cursor: pointer;
       transition: 0.15s;
     }
-    button:hover {
+    button:hover, button.primary-btn {
       background: var(--g2-green);
       color: #000;
     }
@@ -320,546 +167,650 @@
       gap: 6px;
       font-size: 12px;
     }
-    .map-status {
+    .gps-coords {
       font-size: 11px;
-      color: #8bb89a;
-    }
-    .bridge-banner {
-      font-size: 11px;
-      padding: 6px 10px;
-      border-radius: 6px;
-      background: #0c1f13;
-      border: 1px solid #245235;
-      color: #80ffb3;
+      color: #9cd6af;
+      font-family: monospace;
     }
   </style>
 </head>
 <body>
 
-  <div class="header-title">J.A.R.V.I.S. Perimeter HUD — Even G2 (Real Map)</div>
-  <div class="header-sub">576 × 288 px ︱ 四角對稱戰術佈局 ︱ 右上角連接 OpenStreetMap 真實香港道路網 (每 2 秒刷新)</div>
+  <div class="header-title">J.A.R.V.I.S. Bitmap HUD — Even G2 終極修正版</div>
+  <div class="header-sub">全圖像渲染（保留戰術外框 + 靚字體）︱ 左下角電話 Icon 電量 ︱ 真實 GPS 地圖 ︱ 5 秒自動熄畫面</div>
 
-  <!-- Even G2 鏡片實際顯示區 -->
+  <!-- 眼鏡鏡片 576x288 預覽區 -->
   <div class="glasses-bezel">
-    <div class="g2-hud-canvas">
-
-      <!-- 正中央全透明留空區 -->
-      <div class="center-fov-zone">
-        <span>[ CLEAR FORWARD VISION ]</span>
-        <span>正中央全透明視野區</span>
-      </div>
-
-      <!-- 1. 左上角：對稱戰術框 + 放大時間 (21:12) + 6 Nov + HKG 25 -->
-      <div class="hud-module corner-tl">
-        <div class="mod-header"><span>◈ SYS.CHRONO</span></div>
-        <div class="tl-time" id="hud-time">21:12</div>
-        <div class="tl-meta-row">
-          <span id="hud-date">6 Nov</span>
-          <span id="hud-weather">HKG 25</span>
-        </div>
-      </div>
-
-      <!-- 2. 左下角：對稱戰術框 + 兩行通知 + 電話 91% Bar + G2 80% Bar -->
-      <div class="hud-module corner-bl">
-        <div class="mod-header"><span>◈ COMMS &amp; POWER</span></div>
-        <div class="bl-notif-two-lines" id="hud-notif">
-          [WhatsApp] 劉老師：今日放學後訓導組會議改喺 4:15 PM 喺會議室 B 進行，請帶備名單。
-        </div>
-
-        <div class="bat-row">
-          <span class="bat-label" id="phone-bat-text">電話 91%</span>
-          <div class="energy-bar-track">
-            <div class="energy-bar-fill" id="phone-bat-bar" style="width: 91%;"></div>
-          </div>
-        </div>
-
-        <div class="bat-row">
-          <span class="bat-label" id="g2-bat-text">G2 80%</span>
-          <div class="energy-bar-track">
-            <div class="energy-bar-fill" id="g2-bat-bar" style="width: 80%;"></div>
-          </div>
-        </div>
-      </div>
-
-      <!-- 3. 右上角：真實 OpenStreetMap 道路 + OSRM 導航向量圖 (每 2 秒更新) -->
-      <div class="hud-module corner-tr">
-        <div class="mod-header">
-          <span id="map-header-tag">◈ REAL.MAP [2s]</span>
-          <span>N▲</span>
-        </div>
-        <canvas id="realMapCanvas" width="174" height="94"></canvas>
-      </div>
-
-      <!-- 4. 右下角：導航連動 / 運動步數 / 留空 -->
-      <div class="hud-module corner-br" id="hud-br-box">
-        <div class="mod-header"><span id="br-tag">NAV.TELEMETRY ◈</span></div>
-        <div class="br-main" id="br-main">↱ 85m 轉右</div>
-        <div class="br-sub" id="br-sub">大涌橋路 ︱ 剩餘 3 分鐘</div>
-      </div>
-
+    <div class="g2-screen-wrapper">
+      <canvas id="masterPreviewCanvas" width="576" height="288"></canvas>
     </div>
   </div>
 
-  <!-- 真實地圖與數據控制面板 -->
+  <!-- 專門負責射上 G2 眼鏡嘅 3 個獨立圖像容器 (解決無框 & 預設字體醜樣問題) -->
+  <div class="offscreen-canvases">
+    <!-- 1. 左上角圖像容器 (176 x 104) -->
+    <canvas id="c-tl" width="176" height="104"></canvas>
+    <!-- 2. 左下角圖像容器 (240 x 96) -->
+    <canvas id="c-bl" width="240" height="96"></canvas>
+    <!-- 3. 右上角真實地圖容器 (184 x 116) -->
+    <canvas id="c-tr" width="184" height="116"></canvas>
+  </div>
+
+  <!-- 5 秒自動熄畫面狀態列 -->
+  <div class="timeout-bar-wrap">
+    <div>
+      <span id="wake-badge" class="wake-pill wake-on">⚡ 畫面顯示中</span>
+      <span id="timeout-text" style="margin-left: 8px; color: #a3c9b0;">距離自動熄畫面：5 秒</span>
+    </div>
+    <div style="display: flex; gap: 6px;">
+      <button class="primary-btn" onclick="wakeUpHud()">👋 喚醒畫面 (亮起 5 秒)</button>
+      <button onclick="toggleAutoOff()" id="auto-off-btn">⏱️ 5s 自動熄：已開啟</button>
+    </div>
+  </div>
+
+  <!-- 手機端控制台 -->
   <div class="controls">
     <div class="bridge-banner" id="g2-bridge-status">
-      🔌 眼鏡連線狀態：目前喺普通瀏覽器預覽模式（當你用手機 Even App 掃 QR Code 打開本頁時，會自動連接 G2 眼鏡！）
+      🔌 眼鏡狀態：等待連接 Even G2...（喺 Even App 內掃碼打開即會以 Bitmap 圖像模式同步晒個框同靚字體上眼鏡！摸一摸鏡腿即可喚醒 5 秒）
     </div>
 
     <div class="ctrl-title">
-      <span>🗺️ 真實地圖座標切換 (即時抓取 OpenStreetMap 香港街道向量數據)</span>
-      <span class="map-status" id="osm-status">⏳ 正在載入真實道路數據...</span>
+      <span>🛰️ 真實位置地圖 (無導航線 ︱ 純顯示你身邊嘅街道)</span>
+      <span class="gps-coords" id="gps-status-txt">📍 預設位置：沙田 (撳下面掣開啟電話真實 GPS)</span>
     </div>
 
     <div class="ctrl-row">
-      <button onclick="loadRealMapLocation(22.3771, 114.1974, '沙田城門河 / 大涌橋路')">📍 沙田 / 大涌橋路 (預設)</button>
-      <button onclick="loadRealMapLocation(22.3193, 114.1694, '旺角彌敦道 / 亞皆老街')">📍 旺角彌敦道</button>
-      <button onclick="loadRealMapLocation(22.2819, 114.1581, '中環畢打街 / 皇后大道中')">📍 中環畢打街</button>
-      <button onclick="useRealDeviceGPS()">🛰️ 用我部電話/電腦真實 GPS</button>
+      <button class="primary-btn" onclick="startLivePhoneGPS()">🛰️ 授權並持續鎖定電話真實 GPS 位置</button>
+      <button onclick="setManualLocation(22.3771, 114.1974, '沙田')">測試：沙田</button>
+      <button onclick="setManualLocation(22.3193, 114.1694, '旺角')">測試：旺角</button>
+      <button onclick="setManualLocation(22.2819, 114.1581, '中環')">測試：中環</button>
     </div>
 
     <div class="ctrl-row">
-      <button onclick="setRightBottomMode('nav')">右下角：導航連動模式</button>
-      <button onclick="setRightBottomMode('sport')">右下角：運動資訊 (步數)</button>
-      <button onclick="setRightBottomMode('empty')">右下角：暫時留空 (全透明)</button>
-    </div>
-
-    <div class="ctrl-row">
-      <input type="text" id="notif-input" value="[WhatsApp] 劉老師：今日放學後訓導組會議改喺 4:15 PM 喺會議室 B 進行，請帶備名單。" />
-      <button onclick="updateNotif()">更新兩行通知</button>
+      <input type="text" id="notif-input" value="劉老師：今日放學後訓導組會議改喺 4:15 PM 喺會議室 B 進行，請帶備名單。" />
+      <button onclick="updateNotif()">更新左下角兩行通知</button>
     </div>
 
     <div class="ctrl-row">
       <div class="slider-group">
-        <span>電話電量:</span>
-        <input type="range" min="5" max="100" value="91" oninput="updateBatteries(this.value, null)" />
+        <span>📱 電話電量:</span>
+        <input type="range" min="1" max="100" value="91" oninput="updateBat(this.value, null)" />
       </div>
       <div class="slider-group">
-        <span>G2 電量:</span>
-        <input type="range" min="5" max="100" value="80" oninput="updateBatteries(null, this.value)" />
+        <span>🕶️ G2 電量:</span>
+        <input type="range" min="1" max="100" value="80" oninput="updateBat(null, this.value)" />
       </div>
     </div>
   </div>
 
-  <!-- 載入 Even Hub SDK 真機自動對接模組 -->
-  <script type="module">
-    import { waitForEvenAppBridge } from 'https://esm.sh/@evenrealities/even_hub_sdk';
+  <script>
+    // ============================================================================
+    // 核心狀態變數
+    // ============================================================================
+    const monthNames = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+    let hkTemp = 25;
+    let phonePct = 91;
+    let g2Pct = 80;
+    let notifText = '劉老師：今日放學後訓導組會議改喺 4:15 PM 喺會議室 B 進行，請帶備名單。';
 
-    async function connectToRealGlasses() {
-      try {
-        const bridge = await waitForEvenAppBridge();
-        if (!bridge) return;
+    // 真實地圖狀態 (純街道，無導航線)
+    let currentLat = 22.3771;
+    let currentLon = 114.1974;
+    let locationLabel = 'SHATIN';
+    let osmWays = [];
+    let gpsWatchId = null;
 
-        document.getElementById('g2-bridge-status').textContent =
-          '✅ 已成功連接 Even G2 眼鏡！畫面正每 2 秒即時投射上鏡片...';
+    // 5 秒自動休眠 (5s Timeout) 狀態
+    let isHudAwake = true;
+    let autoOffEnabled = true;
+    let remainingSec = 5;
+    let wakeTimestamp = Date.now();
 
-        // 讀取真實 G2 眼鏡電量
-        const info = await bridge.getDeviceInfo();
-        if (info?.batteryLevel) {
-          window.updateBatteries(null, info.batteryLevel);
-        }
+    // 獲取各個 Canvas Context
+    const masterCanvas = document.getElementById('masterPreviewCanvas');
+    const mCtx = masterCanvas.getContext('2d');
+    const cTL = document.getElementById('c-tl');
+    const ctxTL = cTL.getContext('2d');
+    const cBL = document.getElementById('c-bl');
+    const ctxBL = cBL.getContext('2d');
+    const cTR = document.getElementById('c-tr');
+    const ctxTR = cTR.getContext('2d');
 
-        // 建立四角貼邊中空容器 (正中央完全留空)
-        await bridge.createStartUpPageContainer({
-          containerTotalNum: 4,
-          textObject: [
-            {
-              containerID: 1,
-              containerName: 'tl-chrono',
-              xPosition: 8,
-              yPosition: 8,
-              width: 165,
-              height: 100,
-              content: window.getTopLeftText(),
-              isEventCapture: 1
-            },
-            {
-              containerID: 2,
-              containerName: 'bl-comms',
-              xPosition: 8,
-              yPosition: 175,
-              width: 235,
-              height: 105,
-              content: window.getBottomLeftText(),
-              isEventCapture: 0
-            },
-            {
-              containerID: 4,
-              containerName: 'br-telemetry',
-              xPosition: 375,
-              yPosition: 185,
-              width: 192,
-              height: 95,
-              content: window.getBottomRightText(),
-              isEventCapture: 0
-            }
-          ],
-          imageObject: [
-            {
-              containerID: 3,
-              containerName: 'tr-realmap',
-              xPosition: 394,
-              yPosition: 8,
-              width: 174,
-              height: 94
-            }
-          ]
-        });
+    // ============================================================================
+    // 1. 5 秒自動熄畫面 (5s Timeout) 邏輯
+    // ============================================================================
+    window.wakeUpHud = function() {
+      isHudAwake = true;
+      remainingSec = 5;
+      wakeTimestamp = Date.now();
+      updateTimeoutUI();
+      renderAllCanvases();
+      if (window.pushFramesToG2) window.pushFramesToG2(true);
+    };
 
-        // 每 2 秒將右上角真實 OSM 地圖 Canvas 課成灰階 Bytes 射上眼鏡，並同步四角文字
-        setInterval(async () => {
-          const rawBytes = window.extractMapGreenBytes();
-          await bridge.updateImageRawData({
-            containerID: 3,
-            containerName: 'tr-realmap',
-            imageData: rawBytes
-          });
-          await bridge.textContainerUpgrade({
-            containerID: 1,
-            containerName: 'tl-chrono',
-            content: window.getTopLeftText()
-          });
-          await bridge.textContainerUpgrade({
-            containerID: 2,
-            containerName: 'bl-comms',
-            content: window.getBottomLeftText()
-          });
-          await bridge.textContainerUpgrade({
-            containerID: 4,
-            containerName: 'br-telemetry',
-            content: window.getBottomRightText()
-          });
-        }, 2000);
-      } catch (e) {
-        // 喺普通電腦瀏覽器打開時保持模擬器模式
+    window.toggleAutoOff = function() {
+      autoOffEnabled = !autoOffEnabled;
+      document.getElementById('auto-off-btn').textContent =
+        autoOffEnabled ? '⏱️ 5s 自動熄：已開啟' : '⏱️ 5s 自動熄：已關閉 (長亮)';
+      if (!autoOffEnabled) {
+        window.wakeUpHud();
+      }
+    };
+
+    function updateTimeoutUI() {
+      const badge = document.getElementById('wake-badge');
+      const txt = document.getElementById('timeout-text');
+      if (isHudAwake) {
+        badge.className = 'wake-pill wake-on';
+        badge.textContent = '⚡ 畫面顯示中';
+        txt.textContent = autoOffEnabled ? `距離自動熄畫面：${remainingSec} 秒` : '長亮模式 (不會自動熄)';
+      } else {
+        badge.className = 'wake-pill wake-off';
+        badge.textContent = '🌙 已休眠 (鏡片 100% 全透明)';
+        txt.textContent = '輕觸眼鏡鏡腿 / 撳 R1 戒指即可喚醒 5 秒';
       }
     }
 
-    connectToRealGlasses();
-  </script>
+    setInterval(() => {
+      if (!autoOffEnabled) return;
+      if (isHudAwake) {
+        const elapsed = Math.floor((Date.now() - wakeTimestamp) / 1000);
+        remainingSec = Math.max(0, 5 - elapsed);
+        if (remainingSec <= 0) {
+          isHudAwake = false;
+          renderAllCanvases();
+          if (window.pushFramesToG2) window.pushFramesToG2(true);
+        }
+        updateTimeoutUI();
+      }
+    }, 250);
 
-  <script>
-    // =========================================================
-    // 1. 左上角：大字時間 (21:12) + 日期 (6 Nov) + 天氣 (HKG 25)
-    // =========================================================
-    const monthNames = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-    let hkTemp = 25;
+    // ============================================================================
+    // 2. 繪製【左上角 Canvas】(解決字體樣衰 & 無框問題！)
+    //    包含：J.A.R.V.I.S. 左上斜角戰術框 + 靚字體大時間 21:12 + 6 Nov + HKG 25
+    // ============================================================================
+    function drawTopLeftCanvas() {
+      const W = cTL.width;  // 176
+      const H = cTL.height; // 104
+      ctxTL.fillStyle = '#000000';
+      ctxTL.fillRect(0, 0, W, H);
 
-    function refreshTopLeft() {
+      if (!isHudAwake) return; // 休眠時全黑 (= 鏡片全透明)
+
+      // 畫 J.A.R.V.I.S. 雙層戰術 L 型外框 + 斜角刻度
+      ctxTL.strokeStyle = '#00ff66';
+      ctxTL.lineWidth = 2.5;
+      ctxTL.beginPath();
+      ctxTL.moveTo(2, H - 10);
+      ctxTL.lineTo(2, 2);
+      ctxTL.lineTo(W - 18, 2);
+      ctxTL.lineTo(W - 4, 14);
+      ctxTL.stroke();
+
+      // 頂部戰術微標記
+      ctxTL.fillStyle = '#00ff66';
+      ctxTL.fillRect(W - 36, 2, 12, 4);
+
       const now = new Date();
       const hh = String(now.getHours()).padStart(2, '0');
       const mm = String(now.getMinutes()).padStart(2, '0');
       const day = now.getDate();
       const mon = monthNames[now.getMonth()];
 
-      document.getElementById('hud-time').textContent = `${hh}:${mm}`;
-      document.getElementById('hud-date').textContent = `${day} ${mon}`;
-      document.getElementById('hud-weather').textContent = `HKG ${hkTemp}`;
+      // 1. 大字體靚時間 (例如 21:12)
+      ctxTL.fillStyle = '#00ff66';
+      ctxTL.font = '800 36px -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", sans-serif';
+      ctxTL.fillText(`${hh}:${mm}`, 12, 42);
+
+      // 細分隔線
+      ctxTL.strokeStyle = 'rgba(0, 255, 102, 0.45)';
+      ctxTL.lineWidth = 1;
+      ctxTL.beginPath();
+      ctxTL.moveTo(12, 50);
+      ctxTL.lineTo(135, 50);
+      ctxTL.stroke();
+
+      // 2. 日期 (例如 6 Nov)
+      ctxTL.font = '600 17px -apple-system, BlinkMacSystemFont, "SF Pro Display", sans-serif';
+      ctxTL.fillText(`${day} ${mon}`, 12, 71);
+
+      // 3. 天氣溫度 (例如 HKG 25)
+      ctxTL.font = '700 17px -apple-system, BlinkMacSystemFont, "SF Pro Display", sans-serif';
+      ctxTL.fillText(`HKG ${hkTemp}`, 12, 93);
     }
 
-    async function fetchHKTemp() {
+    // ============================================================================
+    // 3. 繪製【左下角 Canvas】(戰術外框 + 兩行通知 + 電話 Icon 電量% + G2 電量%)
+    // ============================================================================
+    function wrapTwoLines(ctx, text, maxWidth) {
+      const chars = Array.from(text);
+      let line1 = '';
+      let line2 = '';
+      let onSecondLine = false;
+
+      for (let i = 0; i < chars.length; i++) {
+        const ch = chars[i];
+        if (!onSecondLine) {
+          if (ctx.measureText(line1 + ch).width <= maxWidth) {
+            line1 += ch;
+          } else {
+            onSecondLine = true;
+            line2 = ch;
+          }
+        } else {
+          if (ctx.measureText(line2 + ch + '…').width <= maxWidth) {
+            line2 += ch;
+          } else {
+            line2 += '…';
+            break;
+          }
+        }
+      }
+      return [line1, line2];
+    }
+
+    function drawBottomLeftCanvas() {
+      const W = cBL.width;  // 240
+      const H = cBL.height; // 96
+      ctxBL.fillStyle = '#000000';
+      ctxBL.fillRect(0, 0, W, H);
+
+      if (!isHudAwake) return;
+
+      // 畫 J.A.R.V.I.S. 左下戰術外框
+      ctxBL.strokeStyle = '#00ff66';
+      ctxBL.lineWidth = 2.5;
+      ctxBL.beginPath();
+      ctxBL.moveTo(2, 10);
+      ctxBL.lineTo(2, H - 2);
+      ctxBL.lineTo(W - 14, H - 2);
+      ctxBL.lineTo(W - 2, H - 14);
+      ctxBL.stroke();
+
+      // 1. 繪製兩行通知文字
+      ctxBL.fillStyle = '#00ff66';
+      ctxBL.font = '600 14px -apple-system, BlinkMacSystemFont, "PingFang HK", "Microsoft JhengHei", sans-serif';
+      const [line1, line2] = wrapTwoLines(ctxBL, notifText, W - 22);
+      ctxBL.fillText(line1, 12, 22);
+      if (line2) {
+        ctxBL.fillText(line2, 12, 42);
+      }
+
+      // 分隔線
+      ctxBL.strokeStyle = 'rgba(0, 255, 102, 0.4)';
+      ctxBL.lineWidth = 1;
+      ctxBL.beginPath();
+      ctxBL.moveTo(12, 52);
+      ctxBL.lineTo(W - 16, 52);
+      ctxBL.stroke();
+
+      // 2. 畫精緻電話 Logo (手繪高清向量手機圖示) + 電話電量%
+      const py = 62;
+      ctxBL.strokeStyle = '#00ff66';
+      ctxBL.lineWidth = 2;
+      ctxBL.strokeRect(13, py, 12, 20); // 手機外框
+      ctxBL.fillStyle = '#00ff66';
+      ctxBL.fillRect(17, py + 16, 4, 2); // Home 鍵小點
+
+      ctxBL.font = '800 17px -apple-system, BlinkMacSystemFont, "SF Pro Display", sans-serif';
+      ctxBL.fillText(`${phonePct}%`, 31, py + 16);
+
+      // 3. 畫 G2 電量% (唔要進度 Bar，乾淨利落)
+      ctxBL.font = '800 17px -apple-system, BlinkMacSystemFont, "SF Pro Display", sans-serif';
+      ctxBL.fillText(`G2 ${g2Pct}%`, 102, py + 16);
+    }
+
+    // ============================================================================
+    // 4. 繪製【右上角 Canvas】(戰術外框 + 純淨真實 GPS 街道圖，無導航線)
+    // ============================================================================
+    function latLonToXY(lat, lon, centerLat, centerLon, W, H) {
+      const scale = 32000;
+      const x = W / 2 + (lon - centerLon) * scale * Math.cos(centerLat * Math.PI / 180);
+      const y = H / 2 - (lat - centerLat) * scale;
+      return { x, y };
+    }
+
+    function drawTopRightMapCanvas() {
+      const W = cTR.width;  // 184
+      const H = cTR.height; // 116
+      ctxTR.fillStyle = '#000000';
+      ctxTR.fillRect(0, 0, W, H);
+
+      if (!isHudAwake) return;
+
+      ctxTR.save();
+      // 限制地圖繪製區域喺內框入面
+      ctxTR.beginPath();
+      ctxTR.rect(4, 18, W - 10, H - 22);
+      ctxTR.clip();
+
+      // 繪製周邊真實 OpenStreetMap 街道線條 (純地圖，無導航線)
+      for (const way of osmWays) {
+        ctxTR.beginPath();
+        ctxTR.strokeStyle = way.isMajor ? '#00ff66' : 'rgba(0, 255, 102, 0.48)';
+        ctxTR.lineWidth = way.isMajor ? 2.6 : 1.4;
+
+        way.pts.forEach((pt, idx) => {
+          const { x, y } = latLonToXY(pt.lat, pt.lon, currentLat, currentLon, W, H);
+          if (idx === 0) ctxTR.moveTo(x, y);
+          else ctxTR.lineTo(x, y);
+        });
+        ctxTR.stroke();
+      }
+
+      // 繪製畫面正中央「我嘅當前位置」定位環 + 實心圓點
+      const cx = W / 2;
+      const cy = H / 2 + 6;
+      ctxTR.strokeStyle = 'rgba(0, 255, 102, 0.65)';
+      ctxTR.lineWidth = 1.5;
+      ctxTR.beginPath();
+      ctxTR.arc(cx, cy, 10, 0, Math.PI * 2);
+      ctxTR.stroke();
+
+      ctxTR.fillStyle = '#00ff66';
+      ctxTR.beginPath();
+      ctxTR.arc(cx, cy, 4, 0, Math.PI * 2);
+      ctxTR.fill();
+
+      ctxTR.restore();
+
+      // 頂部標題列 (顯示真實座標 & N▲)
+      ctxTR.fillStyle = '#000000';
+      ctxTR.fillRect(0, 0, W, 17);
+      ctxTR.fillStyle = '#00ff66';
+      ctxTR.font = 'bold 11px monospace';
+      ctxTR.fillText(`${currentLat.toFixed(4)}N ${currentLon.toFixed(4)}E`, 6, 13);
+      ctxTR.fillText(`N▲`, W - 24, 13);
+
+      // 畫 J.A.R.V.I.S. 右上角戰術外框
+      ctxTR.strokeStyle = '#00ff66';
+      ctxTR.lineWidth = 2.5;
+      ctxTR.beginPath();
+      ctxTR.moveTo(14, 2);
+      ctxTR.lineTo(W - 2, 2);
+      ctxTR.lineTo(W - 2, H - 12);
+      ctxTR.stroke();
+
+      // 內地圖細邊框
+      ctxTR.strokeStyle = 'rgba(0, 255, 102, 0.35)';
+      ctxTR.lineWidth = 1;
+      ctxTR.strokeRect(4, 18, W - 10, H - 22);
+    }
+
+    // ============================================================================
+    // 5. 合成到 576x288 主預覽畫布 (右下角完全留空)
+    // ============================================================================
+    function renderAllCanvases() {
+      drawTopLeftCanvas();
+      drawBottomLeftCanvas();
+      drawTopRightMapCanvas();
+
+      mCtx.fillStyle = '#000000';
+      mCtx.fillRect(0, 0, 576, 288);
+
+      if (!isHudAwake) {
+        mCtx.fillStyle = 'rgba(0, 255, 102, 0.18)';
+        mCtx.font = '13px sans-serif';
+        mCtx.textAlign = 'center';
+        mCtx.fillText('🌙 眼鏡目前已休眠 (5s Timeout) — 鏡片 100% 全透明，撳下方「喚醒」或摸鏡腿重開', 288, 148);
+        mCtx.textAlign = 'left';
+        return;
+      }
+
+      // 將三個獨立圖像貼上 576x288 四角 (中間與右下角完全留空)
+      mCtx.drawImage(cTL, 8, 8);
+      mCtx.drawImage(cBL, 8, 184);
+      mCtx.drawImage(cTR, 384, 8);
+
+      // 中央視野留空提示 (只喺網頁預覽極淡顯示，唔會射上眼鏡)
+      mCtx.strokeStyle = 'rgba(0, 255, 102, 0.08)';
+      mCtx.setLineDash([4, 4]);
+      mCtx.strokeRect(195, 75, 175, 130);
+      mCtx.setLineDash([]);
+    }
+
+    // ============================================================================
+    // 6. 讀取電話真實 GPS 並抓取身邊真實 OpenStreetMap 街道
+    // ============================================================================
+    async function fetchRealOSMRoads(lat, lon) {
+      try {
+        const query = `[out:json][timeout:8];way["highway"](around:260,${lat},${lon});out geom;`;
+        const res = await fetch('https://overpass-api.de/api/interpreter?data=' + encodeURIComponent(query));
+        const data = await res.json();
+        if (data?.elements && data.elements.length > 0) {
+          osmWays = data.elements
+            .filter(e => e.geometry && e.geometry.length > 1)
+            .map(e => ({
+              isMajor: ['primary', 'secondary', 'tertiary', 'trunk'].includes(e.tags?.highway),
+              pts: e.geometry
+            }));
+          renderAllCanvases();
+          return;
+        }
+      } catch (e) {}
+      // 若網絡受阻，產生當前經緯度周邊街道網格
+      generateFallbackStreets(lat, lon);
+      renderAllCanvases();
+    }
+
+    function generateFallbackStreets(lat, lon) {
+      osmWays = [
+        { isMajor: true, pts: [{lat: lat-0.002, lon: lon-0.0012}, {lat: lat+0.002, lon: lon+0.0015}] },
+        { isMajor: true, pts: [{lat: lat-0.0008, lon: lon-0.0022}, {lat: lat+0.001, lon: lon+0.0022}] },
+        { isMajor: false, pts: [{lat: lat-0.002, lon: lon+0.0006}, {lat: lat+0.002, lon: lon-0.0009}] },
+        { isMajor: false, pts: [{lat: lat+0.0007, lon: lon-0.002}, {lat: lat+0.0007, lon: lon+0.002}] },
+        { isMajor: false, pts: [{lat: lat-0.0008, lon: lon-0.002}, {lat: lat-0.0008, lon: lon+0.002}] }
+      ];
+    }
+
+    window.setManualLocation = function(lat, lon, name) {
+      currentLat = lat;
+      currentLon = lon;
+      locationLabel = name;
+      document.getElementById('gps-status-txt').textContent = `📍 已切換至：${name} (${lat.toFixed(4)}, ${lon.toFixed(4)})`;
+      fetchRealOSMRoads(lat, lon);
+      window.wakeUpHud();
+    };
+
+    window.startLivePhoneGPS = function() {
+      if (!navigator.geolocation) {
+        alert('你嘅環境唔支援 Geolocation API');
+        return;
+      }
+      document.getElementById('gps-status-txt').textContent = '🛰️ 正在請求電話 GPS 權限...（請喺彈出視窗撳「允許」）';
+
+      if (gpsWatchId !== null) navigator.geolocation.clearWatch(gpsWatchId);
+
+      gpsWatchId = navigator.geolocation.watchPosition(
+        pos => {
+          currentLat = pos.coords.latitude;
+          currentLon = pos.coords.longitude;
+          document.getElementById('gps-status-txt').textContent =
+            `✅ 已鎖定真實 GPS：${currentLat.toFixed(5)}N, ${currentLon.toFixed(5)}E`;
+          fetchRealOSMRoads(currentLat, currentLon);
+        },
+        err => {
+          document.getElementById('gps-status-txt').textContent =
+            `⚠️ 無法取得 GPS (${err.message}) — 請確保使用 HTTPS (如 GitHub Pages) 並喺手機設定開啟 Even App 定位權限`;
+        },
+        { enableHighAccuracy: true, maximumAge: 2000, timeout: 10000 }
+      );
+      window.wakeUpHud();
+    };
+
+    // 自動抓取香港天文台/Open-Meteo 即時氣溫及電話真實電量
+    async function initEnvAndBattery() {
       try {
         const res = await fetch('https://api.open-meteo.com/v1/forecast?latitude=22.3193&longitude=114.1694&current_weather=true');
         const data = await res.json();
         if (data?.current_weather?.temperature) {
           hkTemp = Math.round(data.current_weather.temperature);
-          refreshTopLeft();
         }
       } catch (e) {}
+
+      if ('getBattery' in navigator) {
+        try {
+          const bat = await navigator.getBattery();
+          phonePct = Math.round(bat.level * 100);
+          bat.addEventListener('levelchange', () => {
+            phonePct = Math.round(bat.level * 100);
+            renderAllCanvases();
+          });
+        } catch (e) {}
+      }
+      renderAllCanvases();
     }
 
-    setInterval(refreshTopLeft, 1000);
-    refreshTopLeft();
-    fetchHKTemp();
-
-    // =========================================================
-    // 2. 左下角：兩行通知 + 電話 91% Bar + G2 80% Bar
-    // =========================================================
-    let phonePct = 91;
-    let g2Pct = 80;
-
-    function makeAsciiBar(pct) {
-      const filled = Math.round(pct / 10);
-      return '█'.repeat(filled) + '░'.repeat(10 - filled);
-    }
-
-    window.updateBatteries = function(newPhone, newG2) {
-      if (newPhone !== null) phonePct = Number(newPhone);
-      if (newG2 !== null) g2Pct = Number(newG2);
-
-      document.getElementById('phone-bat-text').textContent = `電話 ${phonePct}%`;
-      document.getElementById('phone-bat-bar').style.width = `${phonePct}%`;
-
-      document.getElementById('g2-bat-text').textContent = `G2 ${g2Pct}%`;
-      document.getElementById('g2-bat-bar').style.width = `${g2Pct}%`;
+    window.updateBat = function(p, g) {
+      if (p !== null) phonePct = Number(p);
+      if (g !== null) g2Pct = Number(g);
+      window.wakeUpHud();
     };
 
     window.updateNotif = function() {
-      const txt = document.getElementById('notif-input').value.trim();
-      if (txt) document.getElementById('hud-notif').textContent = txt;
+      const val = document.getElementById('notif-input').value.trim();
+      if (val) notifText = val;
+      window.wakeUpHud();
     };
 
-    // 提供俾真機 SDK 讀取嘅格式化文字函數
-    window.getTopLeftText = () => {
-      const t = document.getElementById('hud-time').textContent;
-      const d = document.getElementById('hud-date').textContent;
-      const w = document.getElementById('hud-weather').textContent;
-      return `${t}\n${d}\n${w}`;
-    };
-
-    window.getBottomLeftText = () => {
-      const notif = document.getElementById('hud-notif').textContent.trim();
-      return `${notif}\n電話 ${phonePct}% ${makeAsciiBar(phonePct)}\nG2   ${g2Pct}% ${makeAsciiBar(g2Pct)}`;
-    };
-
-    window.getBottomRightText = () => {
-      if (currentBrMode === 'empty') return '';
-      const m = document.getElementById('br-main').textContent;
-      const s = document.getElementById('br-sub').textContent;
-      return `${m}\n${s}`;
-    };
-
-    // =========================================================
-    // 3. 右上角：真實 OpenStreetMap 道路數據 + OSRM 導航路線渲染器
-    //    (將真實 Lat/Lon 投影成 G2 原生風格向量圖，每 2 秒刷新一次)
-    // =========================================================
-    const mapCanvas = document.getElementById('realMapCanvas');
-    const ctx = mapCanvas.getContext('2d');
-
-    let centerLat = 22.3771;
-    let centerLon = 114.1974;
-    let currentAreaName = '大涌橋路';
-    let realRoadWays = [];    // 儲存真實 OSM 街道座標線段
-    let realRouteNodes = [];  // 儲存真實 OSRM 導航路線節點
-    let routeStepIndex = 0;   // 每 2 秒沿真實路線推進一步
-
-    window.extractMapGreenBytes = function() {
-      const imgData = ctx.getImageData(0, 0, mapCanvas.width, mapCanvas.height).data;
-      const bytes = [];
-      for (let i = 0; i < imgData.length; i += 4) {
-        bytes.push(imgData[i + 1]); // 取綠色通道亮度 (0-255)
+    // 將指定 Canvas 轉為 G2 眼鏡支援嘅灰階 Byte Array
+    window.canvasToG2Bytes = function(canvasEl) {
+      const c = canvasEl.getContext('2d');
+      const img = c.getImageData(0, 0, canvasEl.width, canvasEl.height).data;
+      const out = new Array(canvasEl.width * canvasEl.height);
+      let k = 0;
+      for (let i = 0; i < img.length; i += 4) {
+        out[k++] = isHudAwake ? img[i + 1] : 0; // 休眠時傳送全 0 (100% 透明熄畫面)
       }
-      return bytes;
+      return out;
     };
 
-    // 抓取指定座標周邊 350 米嘅真實 OpenStreetMap 道路同埋 OSRM 導航路線
-    window.loadRealMapLocation = async function(lat, lon, label) {
-      centerLat = lat;
-      centerLon = lon;
-      currentAreaName = label.split('/')[0].trim();
-      routeStepIndex = 0;
-      document.getElementById('osm-status').textContent = `⏳ 正在抓取 ${label} 真實 OSM 街道...`;
+    // 初始化啟動
+    generateFallbackStreets(currentLat, currentLon);
+    fetchRealOSMRoads(currentLat, currentLon);
+    initEnvAndBattery();
+    // 頁面載入時亦主動嘗試一次讀取真實 GPS
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(pos => {
+        currentLat = pos.coords.latitude;
+        currentLon = pos.coords.longitude;
+        document.getElementById('gps-status-txt').textContent =
+          `✅ 自動讀取真實 GPS：${currentLat.toFixed(5)}N, ${currentLon.toFixed(5)}E`;
+        fetchRealOSMRoads(currentLat, currentLon);
+      }, () => {});
+    }
 
+    // 每 2 秒定期刷新畫面
+    setInterval(() => {
+      renderAllCanvases();
+      if (window.pushFramesToG2) window.pushFramesToG2(false);
+    }, 2000);
+  </script>
+
+  <!-- ============================================================================
+       Even Hub SDK 真機連接模組 (全 Image 容器渲染 + 鏡腿觸控喚醒 5 秒)
+       ============================================================================ -->
+  <script type="module">
+    import { waitForEvenAppBridge } from 'https://esm.sh/@evenrealities/even_hub_sdk';
+
+    async function initG2BitmapBridge() {
       try {
-        // 1. 透過 OSRM 公共免費 API 獲取真實道路導航路線 (向東北方行進約 300m)
-        const destLat = lat + 0.0024;
-        const destLon = lon + 0.0022;
-        const osrmUrl = `https://router.project-osrm.org/route/v1/foot/${lon},${lat};${destLon},${destLat}?overview=full&geometries=geojson&steps=true`;
-        const osrmRes = await fetch(osrmUrl);
-        const osrmData = await osrmRes.json();
+        const bridge = await waitForEvenAppBridge();
+        if (!bridge) return;
 
-        if (osrmData?.routes?.[0]?.geometry?.coordinates) {
-          realRouteNodes = osrmData.routes[0].geometry.coordinates.map(c => ({
-            lon: c[0],
-            lat: c[1]
-          }));
+        document.getElementById('g2-bridge-status').textContent =
+          '✅ 已連接 Even G2 真機！四角戰術外框、靚字體與真實地圖已透過 Bitmap 圖像模式投射上眼鏡（支援 5 秒自動休眠，摸鏡腿即喚醒）';
+
+        // 讀取真實 G2 眼鏡電量
+        const devInfo = await bridge.getDeviceInfo();
+        if (devInfo?.batteryLevel) {
+          window.updateBat(null, devInfo.batteryLevel);
         }
 
-        // 2. 透過 Overpass API 獲取周邊 320m 內所有真實街道幾何線條
-        const overpassQuery = `[out:json][timeout:8];way["highway"](around:320,${lat},${lon});out geom;`;
-        const osmRes = await fetch('https://overpass-api.de/api/interpreter?data=' + encodeURIComponent(overpassQuery));
-        const osmData = await osmRes.json();
-
-        if (osmData?.elements) {
-          realRoadWays = osmData.elements
-            .filter(el => el.geometry && el.geometry.length > 1)
-            .map(el => ({
-              name: el.tags?.name || el.tags?.['name:zh'] || '',
-              isMajor: ['primary', 'secondary', 'tertiary', 'trunk'].includes(el.tags?.highway),
-              pts: el.geometry
-            }));
-          document.getElementById('osm-status').textContent = `✅ 已載入 ${realRoadWays.length} 條真實香港街道 (${label})`;
-        }
-      } catch (err) {
-        loadFallbackRealShatinVectors();
-        document.getElementById('osm-status').textContent = `✅ 已載入內置真實座標道路向量 (${label})`;
-      }
-
-      renderG2RealVectorMap();
-    };
-
-    // 內置真實香港沙田街道經緯度備份數據 (防離線/防火牆)
-    function loadFallbackRealShatinVectors() {
-      const bLat = centerLat;
-      const bLon = centerLon;
-      realRoadWays = [
-        { isMajor: true, pts: [{lat: bLat-0.002, lon: bLon-0.0015}, {lat: bLat+0.0025, lon: bLon+0.0018}] },
-        { isMajor: true, pts: [{lat: bLat-0.001, lon: bLon-0.0025}, {lat: bLat+0.0012, lon: bLon+0.0025}] },
-        { isMajor: false, pts: [{lat: bLat-0.002, lon: bLon+0.0005}, {lat: bLat+0.002, lon: bLon-0.0012}] },
-        { isMajor: false, pts: [{lat: bLat+0.0008, lon: bLon-0.002}, {lat: bLat+0.0008, lon: bLon+0.002}] },
-        { isMajor: false, pts: [{lat: bLat-0.0009, lon: bLon-0.002}, {lat: bLat-0.0009, lon: bLon+0.002}] }
-      ];
-      realRouteNodes = [
-        {lat: bLat-0.0008, lon: bLon-0.0006},
-        {lat: bLat-0.0003, lon: bLon-0.0002},
-        {lat: bLat+0.0002, lon: bLon+0.0001},
-        {lat: bLat+0.0008, lon: bLon+0.0005},
-        {lat: bLat+0.0008, lon: bLon+0.0014},
-        {lat: bLat+0.0014, lon: bLon+0.0019}
-      ];
-    }
-
-    // 使用電話或電腦真實 GPS
-    window.useRealDeviceGPS = function() {
-      if (!navigator.geolocation) {
-        alert('你嘅瀏覽器唔支援 GPS 定位');
-        return;
-      }
-      document.getElementById('osm-status').textContent = '🛰️ 正在讀取真實 GPS 訊號...';
-      navigator.geolocation.getCurrentPosition(
-        pos => {
-          window.loadRealMapLocation(pos.coords.latitude, pos.coords.longitude, '當前真實 GPS 位置');
-        },
-        err => {
-          alert('無法讀取 GPS 權限，已切換至旺角彌敦道真實地圖');
-          window.loadRealMapLocation(22.3193, 114.1694, '旺角彌敦道');
-        }
-      );
-    };
-
-    // 將經緯度 (Lat/Lon) 轉換為右上角 Canvas 像素座標 (X, Y)
-    function latLonToCanvasXY(lat, lon, viewLat, viewLon, W, H) {
-      const scale = 29000;
-      const x = W / 2 + (lon - viewLon) * scale * Math.cos(viewLat * Math.PI / 180);
-      const y = H / 2 - (lat - viewLat) * scale;
-      return { x, y };
-    }
-
-    // 每 2 秒繪製一次右上角 G2 原生風格真實地圖
-    function renderG2RealVectorMap() {
-      const W = mapCanvas.width;  // 174
-      const H = mapCanvas.height; // 94
-
-      ctx.fillStyle = '#000000';
-      ctx.fillRect(0, 0, W, H);
-
-      let activeLat = centerLat;
-      let activeLon = centerLon;
-      let headingAngle = 0;
-
-      if (realRouteNodes.length > 1) {
-        const idx = routeStepIndex % (realRouteNodes.length - 1);
-        const curr = realRouteNodes[idx];
-        const next = realRouteNodes[idx + 1];
-        activeLat = curr.lat;
-        activeLon = curr.lon;
-        headingAngle = Math.atan2(next.lon - curr.lon, next.lat - curr.lat);
-      }
-
-      // 1. 繪製周邊真實 OpenStreetMap 街道網
-      for (const way of realRoadWays) {
-        ctx.beginPath();
-        ctx.strokeStyle = way.isMajor ? 'rgba(0, 255, 102, 0.42)' : 'rgba(0, 255, 102, 0.22)';
-        ctx.lineWidth = way.isMajor ? 2.5 : 1.2;
-
-        way.pts.forEach((pt, i) => {
-          const { x, y } = latLonToCanvasXY(pt.lat, pt.lon, activeLat, activeLon, W, H);
-          if (i === 0) ctx.moveTo(x, y);
-          else ctx.lineTo(x, y);
+        // 建立 3 個圖像容器 (左上、左下、右上；右下完全唔建容器 = 100% 留空)
+        // 加多 1 個極細隱形文字容器設為 isEventCapture: 1 用嚟捕捉你摸眼鏡鏡腿喚醒畫面！
+        await bridge.createStartUpPageContainer({
+          containerTotalNum: 4,
+          textObject: [
+            {
+              containerID: 4,
+              containerName: 'touch-wake-catcher',
+              xPosition: 280,
+              yPosition: 280,
+              width: 16,
+              height: 8,
+              content: '',
+              isEventCapture: 1 // 負責接收鏡腿 Touch / R1 戒指撳掣事件以喚醒 5 秒畫面
+            }
+          ],
+          imageObject: [
+            {
+              containerID: 1,
+              containerName: 'tl-bitmap',
+              xPosition: 8,
+              yPosition: 8,
+              width: 176,
+              height: 104
+            },
+            {
+              containerID: 2,
+              containerName: 'bl-bitmap',
+              xPosition: 8,
+              yPosition: 184,
+              width: 240,
+              height: 96
+            },
+            {
+              containerID: 3,
+              containerName: 'tr-map-bitmap',
+              xPosition: 384,
+              yPosition: 8,
+              width: 184,
+              height: 116
+            }
+          ]
         });
-        ctx.stroke();
+
+        // 監聽眼鏡鏡腿觸控或 R1 戒指操作：一摸即刻喚醒顯示 5 秒！
+        if (bridge.onEvenHubEvent) {
+          bridge.onEvenHubEvent(() => {
+            window.wakeUpHud();
+          });
+        }
+
+        let lastAwakeState = true;
+
+        window.pushFramesToG2 = async function(forcePush) {
+          // 如果已經休眠而且上一幀已經清空咗畫面，就唔使再重複發送藍牙封包，慳電！
+          const awakeNow = document.getElementById('wake-badge').classList.contains('wake-on');
+          if (!awakeNow && !lastAwakeState && !forcePush) return;
+          lastAwakeState = awakeNow;
+
+          await bridge.updateImageRawData({
+            containerID: 1,
+            containerName: 'tl-bitmap',
+            imageData: window.canvasToG2Bytes(document.getElementById('c-tl'))
+          });
+          await bridge.updateImageRawData({
+            containerID: 2,
+            containerName: 'bl-bitmap',
+            imageData: window.canvasToG2Bytes(document.getElementById('c-bl'))
+          });
+          await bridge.updateImageRawData({
+            containerID: 3,
+            containerName: 'tr-map-bitmap',
+            imageData: window.canvasToG2Bytes(document.getElementById('c-tr'))
+          });
+        };
+
+        // 初次推上眼鏡
+        window.pushFramesToG2(true);
+      } catch (e) {
+        // 電腦瀏覽器預覽模式
       }
-
-      // 2. 繪製 OSRM 真實規劃導航路線
-      if (realRouteNodes.length > 1) {
-        ctx.beginPath();
-        ctx.strokeStyle = '#00ff66';
-        ctx.lineWidth = 4.5;
-        ctx.lineCap = 'round';
-        ctx.lineJoin = 'round';
-
-        realRouteNodes.forEach((pt, i) => {
-          const { x, y } = latLonToCanvasXY(pt.lat, pt.lon, activeLat, activeLon, W, H);
-          if (i === 0) ctx.moveTo(x, y);
-          else ctx.lineTo(x, y);
-        });
-        ctx.stroke();
-      }
-
-      // 3. 繪製畫面正中央 G2 原生定位實心方向箭咀
-      const cx = W / 2;
-      const cy = H / 2 + 6;
-
-      ctx.save();
-      ctx.translate(cx, cy);
-      ctx.rotate(headingAngle);
-
-      ctx.strokeStyle = 'rgba(0, 255, 102, 0.45)';
-      ctx.lineWidth = 1;
-      ctx.beginPath();
-      ctx.arc(0, 0, 11, 0, Math.PI * 2);
-      ctx.stroke();
-
-      ctx.fillStyle = '#80ffb3';
-      ctx.beginPath();
-      ctx.moveTo(0, -8);
-      ctx.lineTo(-6, 6);
-      ctx.lineTo(0, 2.5);
-      ctx.lineTo(6, 6);
-      ctx.closePath();
-      ctx.fill();
-      ctx.restore();
-
-      // 4. 左下角顯示真實經緯度微標記
-      ctx.fillStyle = 'rgba(0, 0, 0, 0.75)';
-      ctx.fillRect(0, H - 13, W, 13);
-      ctx.fillStyle = '#00ff66';
-      ctx.font = '9px monospace';
-      ctx.fillText(`${activeLat.toFixed(4)}N, ${activeLon.toFixed(4)}E`, 4, H - 3);
-
-      // 同步更新右下角導航距離
-      const remainDist = Math.max(15, 95 - (routeStepIndex % 7) * 12);
-      if (currentBrMode === 'nav') {
-        document.getElementById('br-main').textContent = `↱ ${remainDist}m 轉彎`;
-        document.getElementById('br-sub').textContent = `${currentAreaName} ︱ 剩餘 3 分鐘`;
-      }
-
-      routeStepIndex++;
     }
 
-    loadFallbackRealShatinVectors();
-    window.loadRealMapLocation(22.3771, 114.1974, '沙田城門河 / 大涌橋路');
-    setInterval(renderG2RealVectorMap, 2000);
-
-    // =========================================================
-    // 4. 右下角：導航連動 / 運動步數 / 留空 切換
-    // =========================================================
-    let currentBrMode = 'nav';
-
-    window.setRightBottomMode = function(mode) {
-      currentBrMode = mode;
-      const box = document.getElementById('hud-br-box');
-      const tag = document.getElementById('br-tag');
-      const main = document.getElementById('br-main');
-      const sub = document.getElementById('br-sub');
-
-      if (mode === 'empty') {
-        box.classList.add('is-empty');
-        tag.textContent = '';
-        main.textContent = '';
-        sub.textContent = '';
-      } else if (mode === 'sport') {
-        box.classList.remove('is-empty');
-        tag.textContent = 'FITNESS.STAT ◈';
-        main.textContent = '👣 6,420 步';
-        sub.textContent = '284 kcal ︱ ♥ 98 bpm';
-      } else if (mode === 'nav') {
-        box.classList.remove('is-empty');
-        tag.textContent = 'NAV.TELEMETRY ◈';
-        main.textContent = '↱ 85m 轉彎';
-        sub.textContent = `${currentAreaName} ︱ 剩餘 3 分鐘`;
-      }
-    };
+    initG2BitmapBridge();
   </script>
 </body>
 </html>
